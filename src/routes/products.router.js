@@ -1,100 +1,93 @@
 const express = require("express");
 const router = express.Router();
-
 const ProductManager = require("../controllers/product-manager.db.js");
 const productManager = new ProductManager();
 
-//1) Listar todos los productos. 
-router.get("/", async (req, res) => {
+//4) Eliminamos un producto especifico del carrito: 
+
+router.delete('/:cid/product/:pid', async (req, res) => {
     try {
-        const limit = req.query.limit;
-        const productos = await productManager.getProducts();
-        if (limit) {
-            res.json(productos.slice(0, limit));
-        } else {
-            res.json(productos);
-        }
-    } catch (error) {
-        console.error("Error al obtener productos", error);
-        res.status(500).json({
-            error: "Error interno del servidor"
-        });
-    }
-});
+        const cartId = req.params.cid;
+        const productId = req.params.pid;
 
-//2) Traer solo un producto por id: 
+        const updatedCart = await cartManager.eliminarProductoDelCarrito(cartId, productId);
 
-router.get("/:pid", async (req, res) => {
-    const id = req.params.pid;
-
-    try {
-        const producto = await productManager.getProductById(id);
-        if (!producto) {
-            return res.json({
-                error: "Producto no encontrado"
-            });
-        }
-
-        res.json(producto);
-    } catch (error) {
-        console.error("Error al obtener producto", error);
-        res.status(500).json({
-            error: "Error interno del servidor"
-        });
-    }
-});
-
-
-//3) Agregar nuevo producto: 
-
-router.post("/", async (req, res) => {
-    const nuevoProducto = req.body;
-
-    try {
-        await productManager.addProduct(nuevoProducto);
-        res.status(201).json({
-            message: "Producto agregado joya"
-        });
-    } catch (error) {
-        console.error("Error al agregar producto", error);
-        res.status(500).json({
-            error: "Error interno del servidor"
-        });
-    }
-});
-
-//4) Actualizar por ID
-router.put("/:pid", async (req, res) => {
-    const id = req.params.pid;
-    const productoActualizado = req.body;
-
-    try {
-        await productManager.updateProduct(id, productoActualizado);
         res.json({
-            message: "Producto actualizado joya"
+            status: 'success',
+            message: 'Producto eliminado del carrito correctamente',
+            updatedCart,
         });
     } catch (error) {
-        console.error("Error al actualizar producto", error);
+        console.error('Error al eliminar el producto del carrito', error);
         res.status(500).json({
-            error: "Error interno del servidor"
+            status: 'error',
+            error: 'Error interno del servidor',
         });
     }
 });
 
-//5) Eliminar producto: 
+//5) Actualizamos productos del carrito: 
 
-router.delete("/:pid", async (req, res) => {
-    const id = req.params.pid;
+router.put('/:cid', async (req, res) => {
+    const cartId = req.params.cid;
+    const updatedProducts = req.body;
+    // Debes enviar un arreglo de productos en el cuerpo de la solicitud
 
     try {
-        await productManager.deleteProduct(id) ;
+        const updatedCart = await cartManager.actualizarCarrito(cartId, updatedProducts);
+        res.json(updatedCart);
+    } catch (error) {
+        console.error('Error al actualizar el carrito', error);
+        res.status(500).json({
+            status: 'error',
+            error: 'Error interno del servidor',
+        });
+    }
+});
+
+
+//6) Actualizamos las cantidades de productos
+
+router.put('/:cid/product/:pid', async (req, res) => {
+    try {
+        const cartId = req.params.cid;
+        const productId = req.params.pid;
+        const newQuantity = req.body.quantity;
+
+        const updatedCart = await cartManager.actualizarCantidadDeProducto(cartId, productId, newQuantity);
+
         res.json({
-            message: "Producto eliminado joya"
+            status: 'success',
+            message: 'Cantidad del producto actualizada correctamente',
+            updatedCart,
         });
     } catch (error) {
-        console.error("Error al eliminar producto", error);
+        console.error('Error al actualizar la cantidad del producto en el carrito', error);
         res.status(500).json({
-            error: "Error interno del servidor"
+            status: 'error',
+            error: 'Error interno del servidor',
+        });
+    }
+});
+
+//7) Vaciamos el carrito: 
+
+router.delete('/:cid', async (req, res) => {
+    try {
+        const cartId = req.params.cid;
+        
+        const updatedCart = await cartManager.vaciarCarrito(cartId);
+
+        res.json({
+            status: 'success',
+            message: 'Todos los productos del carrito fueron eliminados correctamente',
+            updatedCart,
+        });
+    } catch (error) {
+        console.error('Error al vaciar el carrito', error);
+        res.status(500).json({
+            status: 'error',
+            error: 'Error interno del servidor',
         });
     }
 });

@@ -1,20 +1,27 @@
 const mongoose = require("mongoose");
 
 const cartSchema = new mongoose.Schema({
-    producs: [{
-         products:{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Product",
-            required: true
-         },
-         quantity:{
-            type:Number,
-            required: true
-        }
+  products: [
+    {
+      product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product',
+        required: true
+      },
+      quantity: {
+        type: Number,
+        required: true
+      }
     }
-    ]
-})
+  ]
+});
 
-const CartModel = mongoose.model("carts", cartSchema)
+// Middleware
+cartSchema.pre('findOne', function (next) {
+  this.populate('products.product', '_id title price');
+  next();
+});
 
-module.exports = CartModel
+const CartModel = mongoose.model("carts", cartSchema);
+
+module.exports = CartModel;
